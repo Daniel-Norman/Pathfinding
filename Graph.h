@@ -25,14 +25,11 @@ private:
 
 Graph::Graph()
 {
-	unsigned lastId = 0;
 	for (int i = 0; i < MAP_SIZE; ++i)
 	{
 		for (int j = 0; j < MAP_SIZE; ++j)
 		{
-			map[i][j] = new Node();
-			map[i][j]->id = lastId; //Set a unique ID for each node, used later for removing from the unvisited node list
-			++lastId;
+			map[i][j] = new Node(i, j);
 			unvisitedNodes.push_back(map[i][j]);
 		}
 	}
@@ -55,10 +52,15 @@ void Graph::setDestination(int x, int y)
 //Sets the edges between the nodes. Diagonal movement allowed (root(2) length)
 void Graph::setEdges()
 {
+	int destX = destination->x;
+	int destY = destination->y;
+
 	for (int i = 0; i < MAP_SIZE; ++i)
 	{
 		for (int j = 0; j < MAP_SIZE; ++j)
 		{
+			map[i][j]->heuristic = sqrt(pow((destX - map[i][j]->x), 2) + pow((destY - map[i][j]->y), 2));
+
 			Node::Type wall = Node::Type::Wall;
 			if (j + 1 < MAP_SIZE && map[i][j + 1]->type != wall)	//right node
 				map[i][j]->neighbors.push_back({ map[i][j + 1], 1 });
@@ -88,7 +90,7 @@ bool Graph::visitNodes()
 
 	for (vector<Node::Edge>::iterator it = current->neighbors.begin(); it != current->neighbors.end(); ++it) //Look at the current node's neighbors
 	{
-		double distance = current->distance + it->length;
+		double distance = current->distance + it->length + (it->node->heuristic) * 0.5;
 		if (!it->node->visited && distance < it->node->distance) //If a new tentative distance is smaller than that neighbor's current saved distance, replace it
 		{
 			it->node->distance = distance;
